@@ -7,7 +7,9 @@ import {
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { AuditService } from '../../audit/audit.service';
+import { AuditOperation } from '../../infrastructure/database/models/audit-log.model';
 import { Reflector } from '@nestjs/core';
+import { Request } from 'express';
 
 export const AUDIT_LOG_KEY = 'auditLog';
 export const AuditLog =
@@ -25,7 +27,7 @@ export class AuditInterceptor implements NestInterceptor {
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<Request>();
     const handler = context.getHandler();
     const tableName = this.reflector.get<string>(AUDIT_LOG_KEY, handler);
 
@@ -34,36 +36,56 @@ export class AuditInterceptor implements NestInterceptor {
     }
 
     return next.handle().pipe(
-      tap(async (data) => {
-        if (data && data.id) {
-          const operation = this.getOperationFromMethod(request.method);
+      tap((data: Record<string, any> | null) => {
+        if (!data || typeof data.id === 'undefined' || data.id === null) return;
 
-          await this.auditService.log({
+        const operation = this.getOperationFromMethod(
+          request.method,
+        ) as AuditOperation;
+
+        // Safe extraction of user id from request (support JWT `sub` or legacy `userId`)
+        const user = (request as unknown as Record<string, any>)?.user as
+          | { sub?: string; userId?: string }
+          | undefined;
+        const userId: string | undefined = user?.sub ?? user?.userId;
+
+        // Fire-and-forget audit logging to avoid interfering with response
+        this.auditService
+          .log({
             table_name: tableName,
-            record_id: data.id,
+            record_id: String(data.id),
             operation,
             new_values: data,
-            // Prefer JWT 'sub' claim, fallback to older userId property for compatibility
-            user_id: request.user?.sub || request.user?.userId,
+            user_id: userId,
             user_ip: request.ip,
-            user_agent: request.get('User-Agent'),
+            user_agent:
+              typeof request.get === 'function'
+                ? request.get('User-Agent')
+                : undefined,
+          })
+          .catch((err) => {
+            console.error(
+              'Audit log failed:',
+              err instanceof Error ? err.message : err,
+            );
           });
-        }
       }),
     );
   }
 
-  private getOperationFromMethod(method: string) {
+  private getOperationFromMethod(
+    method: string,
+  ): 'CREATE' | 'UPDATE' | 'SOFT_DELETE' {
     switch (method) {
       case 'POST':
-        return 'CREATE' as any;
+        return 'CREATE';
       case 'PUT':
       case 'PATCH':
-        return 'UPDATE' as any;
+        return 'UPDATE';
       case 'DELETE':
-        return 'SOFT_DELETE' as any;
+        return 'SOFT_DELETE';
       default:
-        return 'UPDATE' as any;
+        return 'UPDATE';
     }
   }
 }

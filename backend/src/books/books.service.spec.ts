@@ -14,6 +14,9 @@ describe('BooksService', () => {
   let bookModel: typeof Book;
   let auditService: AuditService;
   let cloudinaryService: CloudinaryService;
+  let mockAuthor: any;
+  let mockPublisher: any;
+  let mockGenre: any;
 
   const mockBook = {
     id: '1',
@@ -48,6 +51,10 @@ describe('BooksService', () => {
   };
 
   beforeEach(async () => {
+    mockAuthor = { findByPk: jest.fn() };
+    mockPublisher = { findByPk: jest.fn() };
+    mockGenre = { findByPk: jest.fn() };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BooksService,
@@ -57,15 +64,15 @@ describe('BooksService', () => {
         },
         {
           provide: getModelToken(Author),
-          useValue: { findByPk: jest.fn() },
+          useValue: mockAuthor,
         },
         {
           provide: getModelToken(Publisher),
-          useValue: { findByPk: jest.fn() },
+          useValue: mockPublisher,
         },
         {
           provide: getModelToken(Genre),
-          useValue: { findByPk: jest.fn() },
+          useValue: mockGenre,
         },
         {
           provide: AuditService,
@@ -82,6 +89,10 @@ describe('BooksService', () => {
     bookModel = module.get<typeof Book>(getModelToken(Book));
     auditService = module.get<AuditService>(AuditService);
     cloudinaryService = module.get<CloudinaryService>(CloudinaryService);
+  // expose the injected mocks for tests
+  mockAuthor = module.get(getModelToken(Author));
+  mockPublisher = module.get(getModelToken(Publisher));
+  mockGenre = module.get(getModelToken(Genre));
   });
 
   afterEach(() => {
@@ -141,6 +152,42 @@ describe('BooksService', () => {
       expect(mockBook.update).toHaveBeenCalledWith({ image_url: newImageUrl });
       expect(auditService.log).toHaveBeenCalled();
       expect(result.image_url).toBe(newImageUrl);
+    });
+  });
+
+  describe('validateRelations', () => {
+    it('throws BadRequestException when author not found', async () => {
+      const dto = { author_id: 'missing-author' } as any;
+      (mockAuthor.findByPk as jest.Mock).mockResolvedValue(null);
+
+      await expect(service['validateRelations'](dto)).rejects.toThrow();
+    });
+  });
+
+  describe('exportToCsv', () => {
+    it('returns csv string with headers and rows', async () => {
+      const rowBook = {
+        id: 'b1',
+        title: 'T',
+        isbn: 'i',
+        author: { first_name: 'A', last_name: 'B' },
+        publisher: { name: 'P' },
+        genre: { name: 'G' },
+        price: 10,
+        stock_quantity: 2,
+        is_available: true,
+        publication_date: '2020-01-01',
+        createdAt: '2020-01-02',
+      };
+
+      (mockBookModel.findAndCountAll as jest.Mock).mockResolvedValue({
+        rows: [rowBook],
+        count: 1,
+      });
+
+      const csv = await service.exportToCsv({} as any);
+      expect(csv).toContain('ID,Title,ISBN');
+      expect(csv).toContain('b1');
     });
   });
 });
