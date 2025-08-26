@@ -11,7 +11,7 @@ import { Genre } from '../infrastructure/database/models/genre.model';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { FilterBookDto } from './dto/filter-book.dto';
-import { Op } from 'sequelize';
+import { Op, literal } from 'sequelize';
 import { AuditService } from '../audit/audit.service';
 import { CloudinaryService } from '../infrastructure/file-upload/cloudinary.service';
 import { AuditOperation } from '../infrastructure/database/models/audit-log.model';
@@ -124,12 +124,33 @@ export class BooksService {
       }
     }
 
-    // Ordenamiento
-    let order: any = [[sort_by, sort_order]];
+    // Ordenamiento: mapear valores de entrada a columnas reales para evitar SQL inválido
+    let order: any;
+    const mapSortBy = (val: string) => {
+      if (!val) return 'createdAt';
+      switch (val) {
+        case 'created_at':
+          return 'createdAt';
+        case 'publication_date':
+          return 'publication_date';
+        case 'title':
+          return 'title';
+        case 'price':
+          return 'price';
+        default:
+          return val;
+      }
+    };
+
     if (sort_by === 'author') {
       order = [[{ model: Author, as: 'author' }, 'last_name', sort_order]];
     } else if (sort_by === 'publisher') {
       order = [[{ model: Publisher, as: 'publisher' }, 'name', sort_order]];
+    } else {
+      const field = mapSortBy(sort_by);
+      // Usar literal para evitar inconsistencias en el mapeo de columnas/atributos
+      // y generar un ORDER BY explícito sobre la tabla "Book".
+      order = [literal(`"Book"."${field}" ${sort_order}`)];
     }
 
     const offset = (page - 1) * limit;
@@ -324,7 +345,27 @@ export class BooksService {
     }
 
     // Subir nueva imagen
-    const imageUrl = await this.cloudinaryService.uploadImage(file, 'books');
+    let imageUrl: string;
+    try {
+      imageUrl = await this.cloudinaryService.uploadImage(file, 'books');
+    } catch (err: unknown) {
+      const msg =
+        typeof err === 'object' && err !== null && 'message' in err
+          ? String((err as any).message)
+          : '';
+      // Mapear errores conocidos de Cloudinary a BadRequest
+      if (
+        msg.includes('Invalid image') ||
+        msg.includes('invalid image') ||
+        msg.includes('Error uploading') ||
+        msg.includes('No result from Cloudinary')
+      ) {
+        throw new BadRequestException(
+          'Archivo de imagen inválido o con formato no soportado',
+        );
+      }
+      throw err;
+    }
 
     // Actualizar libro con nueva URL
     const oldValues = book.toJSON();

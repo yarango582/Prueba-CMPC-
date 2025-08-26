@@ -25,15 +25,15 @@ export class Genre extends Model {
   @Unique
   @AllowNull(false)
   @Column(DataType.STRING(100))
-  name: string;
+  declare name: string;
 
   @Column(DataType.TEXT)
-  description: string;
+  declare description: string;
 
   @Default(true)
   @Column(DataType.BOOLEAN)
-  is_active: boolean;
+  declare is_active: boolean;
 
   @HasMany(() => Book)
-  books: Book[];
+  declare books: Book[];
 }

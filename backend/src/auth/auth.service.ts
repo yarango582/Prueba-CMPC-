@@ -66,17 +66,30 @@ export class AuthService {
       throw new ConflictException('El email ya está registrado');
     }
 
-    // Hash de la contraseña
-    const hashedPassword = await bcrypt.hash(registerDto.password, 12);
+    // Crear usuario (el UsersService se encarga del hash de password)
+    const user = await this.usersService.create(registerDto);
 
-    // Crear usuario
-    const user = await this.usersService.create({
-      ...registerDto,
-      password: hashedPassword,
-    });
+    // Generar tokens directamente usando los datos del usuario creado
+    const payload = {
+      email: user.email,
+      sub: user.id,
+      role: user.role,
+    };
 
-    // Retornar login automático
-    return this.login({ email: user.email, password: registerDto.password });
+    const access_token = this.jwtService.sign(payload);
+    const refresh_token = this.jwtService.sign(payload, { expiresIn: '7d' });
+
+    return {
+      access_token,
+      refresh_token,
+      user: {
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        role: user.role,
+      },
+    };
   }
 
   async refreshToken(refreshTokenDto: RefreshTokenDto) {

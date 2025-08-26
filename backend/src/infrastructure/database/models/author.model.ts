@@ -23,25 +23,25 @@ export class Author extends Model {
 
   @AllowNull(false)
   @Column(DataType.STRING(100))
-  first_name: string;
+  declare first_name: string;
 
   @AllowNull(false)
   @Column(DataType.STRING(100))
-  last_name: string;
+  declare last_name: string;
 
   @Column(DataType.TEXT)
-  biography: string;
+  declare biography: string;
 
   @Column(DataType.DATE)
-  birth_date: Date;
+  declare birth_date: Date;
 
   @Column(DataType.STRING(100))
-  nationality: string;
+  declare nationality: string;
 
   @Default(true)
   @Column(DataType.BOOLEAN)
-  is_active: boolean;
+  declare is_active: boolean;
 
   @HasMany(() => Book)
-  books: Book[];
+  declare books: Book[];
 }

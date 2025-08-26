@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ResponseInterceptor } from './response/response.interceptor';
-import { HttpExceptionFilter } from './http-exception/http-exception.filter';
+import { HttpExceptionFilter } from './filters/http-exception.filter';
 
 @Module({
   providers: [ResponseInterceptor, HttpExceptionFilter],

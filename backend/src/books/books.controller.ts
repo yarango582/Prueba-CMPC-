@@ -8,12 +8,12 @@ import {
   Delete,
   Query,
   UseGuards,
-  Req,
   Res,
   UseInterceptors,
   UploadedFile,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -31,6 +31,7 @@ import { FilterBookDto } from './dto/filter-book.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth/jwt-auth.guard';
 import { Book } from '../infrastructure/database/models/book.model';
 import { Response } from 'express';
+import { CurrentUser } from '../shared/decorators/current-user.decorator';
 
 @ApiTags('Books')
 @ApiBearerAuth()
@@ -58,8 +59,26 @@ export class BooksController {
     status: 401,
     description: 'No autorizado.',
   })
-  create(@Body() createBookDto: CreateBookDto, @Req() req) {
-    return this.booksService.create(createBookDto, req.user.sub);
+  create(
+    @Body() createBookDto: CreateBookDto,
+    @CurrentUser('sub') userId: string,
+  ) {
+    // ValidationPipe with `transform: true` turns the body into a class instance.
+    // Destructuring a class instance may not include all fields when they're non-enumerable.
+    // Convert to a plain object to safely normalize aliases coming from older clients.
+    const dtoPlain = JSON.parse(JSON.stringify(createBookDto || {}));
+
+    const { summary, genre_ids, ...rest } = dtoPlain as any;
+    const normalized: Partial<CreateBookDto> = {
+      ...(rest as Partial<CreateBookDto>),
+    };
+
+    if (summary && !normalized.description) normalized.description = summary;
+    if (!normalized.genre_id && Array.isArray(genre_ids) && genre_ids.length) {
+      normalized.genre_id = genre_ids[0];
+    }
+
+    return this.booksService.create(normalized as CreateBookDto, userId);
   }
 
   @Get()
@@ -161,9 +180,9 @@ export class BooksController {
   update(
     @Param('id') id: string,
     @Body() updateBookDto: UpdateBookDto,
-    @Req() req,
+    @CurrentUser('sub') userId: string,
   ) {
-    return this.booksService.update(id, updateBookDto, req.user.sub);
+    return this.booksService.update(id, updateBookDto, userId);
   }
 
   @Delete(':id')
@@ -180,8 +199,8 @@ export class BooksController {
     status: 404,
     description: 'Libro no encontrado.',
   })
-  remove(@Param('id') id: string, @Req() req) {
-    return this.booksService.remove(id, req.user.sub);
+  remove(@Param('id') id: string, @CurrentUser('sub') userId: string) {
+    return this.booksService.remove(id, userId);
   }
 
   @Post(':id/upload-image')
@@ -212,11 +231,36 @@ export class BooksController {
       },
     },
   })
-  uploadImage(
+  async uploadImage(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
+    @CurrentUser('sub') userId: string,
   ) {
-    // TODO: Implementar lógica de subida de archivo
-    return { image_url: `/uploads/${file.filename}` };
+    if (!file) {
+      throw new BadRequestException('No se recibió ningún archivo');
+    }
+
+    if (!file.mimetype || !file.mimetype.startsWith('image/')) {
+      throw new BadRequestException('El archivo debe ser una imagen');
+    }
+
+    if (file.size === 0) {
+      throw new BadRequestException('El archivo está vacío');
+    }
+
+    try {
+      return await this.booksService.uploadImage(id, file, userId);
+    } catch (err: any) {
+          const message = typeof err === 'string' ? err : (err instanceof Error ? err.message : '');
+          if (
+            message.includes('Invalid image file') ||
+            message.includes('error uploading')
+          ) {
+        throw new BadRequestException(
+          'Archivo de imagen inválido o con formato no soportado',
+        );
+      }
+      throw err;
+    }
   }
 }

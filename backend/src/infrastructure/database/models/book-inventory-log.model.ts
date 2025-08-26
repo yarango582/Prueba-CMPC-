@@ -34,41 +34,41 @@ export class BookInventoryLog extends Model {
   @AllowNull(false)
   @Index
   @Column(DataType.UUID)
-  book_id: string;
+  declare book_id: string;
 
   @AllowNull(false)
   @Column(DataType.ENUM(...Object.values(InventoryOperation)))
-  operation_type: InventoryOperation;
+  declare operation_type: InventoryOperation;
 
   @AllowNull(false)
   @Column(DataType.INTEGER)
-  quantity_change: number;
+  declare quantity_change: number;
 
   @AllowNull(false)
   @Column(DataType.INTEGER)
-  previous_stock: number;
+  declare previous_stock: number;
 
   @AllowNull(false)
   @Column(DataType.INTEGER)
-  new_stock: number;
+  declare new_stock: number;
 
   @Column(DataType.STRING(255))
-  reason: string;
+  declare reason: string;
 
   @ForeignKey(() => User)
   @AllowNull(false)
   @Index
   @Column(DataType.UUID)
-  user_id: string;
+  declare user_id: string;
 
   @Default(() => new Date())
   @Index
   @Column(DataType.DATE)
-  created_at: Date;
+  declare created_at: Date;
 
   @BelongsTo(() => Book)
-  book: Book;
+  declare book: Book;
 
   @BelongsTo(() => User)
-  user: User;
+  declare user: User;
 }

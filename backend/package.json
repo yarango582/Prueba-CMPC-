@@ -93,7 +93,17 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.(t|j)s",
+      "!**/*.spec.ts",
+      "!**/infrastructure/database/models/**",
+      "!**/dist/**",
+      "!**/test/**"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "infrastructure/database/models/",
+      "test/",
+      "dist/"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"

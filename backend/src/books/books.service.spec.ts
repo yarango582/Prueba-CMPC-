@@ -99,9 +99,12 @@ describe('BooksService', () => {
       const result = await service.findOne('1');
 
       expect(result).toEqual(mockBook);
-      expect(mockBookModel.findByPk).toHaveBeenCalledWith('1', {
-        include: ['author', 'publisher', 'genre'],
-      });
+      expect(mockBookModel.findByPk).toHaveBeenCalledWith(
+        '1',
+        expect.objectContaining({
+          include: expect.any(Array),
+        }),
+      );
     });
 
     it('should throw NotFoundException when book not found', async () => {

@@ -29,66 +29,66 @@ export class Book extends Model {
   @AllowNull(false)
   @Index
   @Column(DataType.STRING(300))
-  title: string;
+  declare title: string;
 
   @Unique
   @Column(DataType.STRING(20))
-  isbn: string;
+  declare isbn: string;
 
   @AllowNull(false)
   @Column(DataType.DECIMAL(10, 2))
-  price: number;
+  declare price: number;
 
   @Default(0)
   @Column(DataType.INTEGER)
-  stock_quantity: number;
+  declare stock_quantity: number;
 
   @Column(DataType.DATE)
-  publication_date: Date;
+  declare publication_date: Date;
 
   @Column(DataType.INTEGER)
-  pages: number;
+  declare pages: number;
 
   @Default('Español')
   @Column(DataType.STRING(50))
-  language: string;
+  declare language: string;
 
   @Column(DataType.TEXT)
-  description: string;
+  declare description: string;
 
   @Column(DataType.STRING(500))
-  image_url: string;
+  declare image_url: string;
 
   @ForeignKey(() => Author)
   @AllowNull(false)
   @Column(DataType.UUID)
-  author_id: string;
+  declare author_id: string;
 
   @ForeignKey(() => Publisher)
   @AllowNull(false)
   @Column(DataType.UUID)
-  publisher_id: string;
+  declare publisher_id: string;
 
   @ForeignKey(() => Genre)
   @AllowNull(false)
   @Column(DataType.UUID)
-  genre_id: string;
+  declare genre_id: string;
 
   @Default(true)
   @Index
   @Column(DataType.BOOLEAN)
-  is_available: boolean;
+  declare is_available: boolean;
 
   @Default(true)
   @Column(DataType.BOOLEAN)
-  is_active: boolean;
+  declare is_active: boolean;
 
   @BelongsTo(() => Author)
-  author: Author;
+  declare author: Author;
 
   @BelongsTo(() => Publisher)
-  publisher: Publisher;
+  declare publisher: Publisher;
 
   @BelongsTo(() => Genre)
-  genre: Genre;
+  declare genre: Genre;
 }

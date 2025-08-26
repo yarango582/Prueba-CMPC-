@@ -43,7 +43,8 @@ export class AuditInterceptor implements NestInterceptor {
             record_id: data.id,
             operation,
             new_values: data,
-            user_id: request.user?.userId,
+            // Prefer JWT 'sub' claim, fallback to older userId property for compatibility
+            user_id: request.user?.sub || request.user?.userId,
             user_ip: request.ip,
             user_agent: request.get('User-Agent'),
           });

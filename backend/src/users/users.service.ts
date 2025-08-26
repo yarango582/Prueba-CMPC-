@@ -36,7 +36,7 @@ export class UsersService {
   async findAll() {
     return this.userModel.findAll({
       attributes: { exclude: ['password'] },
-      order: [['created_at', 'DESC']],
+      order: [['createdAt', 'DESC']],
     });
   }
 

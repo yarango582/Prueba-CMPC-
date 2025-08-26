@@ -1,4 +1,4 @@
-import { AuthService } from './auth.service';
+import { AuthService } from '../../../src/auth/auth.service';
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -27,11 +27,17 @@ describe('AuthService', () => {
       last_name: 'B',
     };
     mockUsersService.findByEmail = jest.fn().mockResolvedValue(user);
-    (authService as any).validateUser = jest.fn().mockResolvedValue({ ...user, password: undefined });
+    // bcrypt.compare will be called in validateUser; instead call validateUser stub directly
+    // Simulate validateUser by mocking AuthService.validateUser
+    (authService as any).validateUser = jest
+      .fn()
+      .mockResolvedValue({ ...user, password: undefined });
 
-    const res = await authService.login({ email: 'a@b.com', password: 'pass' } as any);
+    const res = await authService.login({
+      email: 'a@b.com',
+      password: 'pass',
+    } as any);
     expect(res.access_token).toBeDefined();
     expect(res.user.email).toEqual(user.email);
   });
 });
-

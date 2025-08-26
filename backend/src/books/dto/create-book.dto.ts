@@ -9,6 +9,7 @@ import {
   IsDateString,
   IsBoolean,
   IsUrl,
+  IsArray,
 } from 'class-validator';
 
 export class CreateBookDto {
@@ -116,9 +117,30 @@ export class CreateBookDto {
     description: 'ID del género',
     example: '550e8400-e29b-41d4-a716-446655440002',
   })
+  @IsOptional()
   @IsUUID()
-  @IsNotEmpty()
-  genre_id: string;
+  genre_id?: string; // Clarified genre_id
+
+  @ApiProperty({
+    description:
+      'IDs de géneros (alternativa a genre_id). Se acepta para compatibilidad con clientes antiguos; el servidor usará el primer ID si se envía un array.',
+    example: ['550e8400-e29b-41d4-a716-446655440002'],
+    required: false,
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUUID(4, { each: true })
+  genre_ids?: string[];
+
+  @ApiProperty({
+    description: 'Resumen corto del libro (alias summary)',
+    example: 'Resumen breve...',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  summary?: string;
 
   @ApiProperty({
     description: 'Disponibilidad del libro',

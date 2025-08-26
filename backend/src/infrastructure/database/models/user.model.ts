@@ -30,29 +30,29 @@ export class User extends Model {
   @Unique
   @AllowNull(false)
   @Column(DataType.STRING(255))
-  email: string;
+  declare email: string;
 
   @AllowNull(false)
   @Column(DataType.STRING(255))
-  password: string;
+  declare password: string;
 
   @AllowNull(false)
   @Column(DataType.STRING(100))
-  first_name: string;
+  declare first_name: string;
 
   @AllowNull(false)
   @Column(DataType.STRING(100))
-  last_name: string;
+  declare last_name: string;
 
   @Default(UserRole.USER)
   @Column(DataType.ENUM(...Object.values(UserRole)))
-  role: UserRole;
+  declare role: UserRole;
 
   @Default(true)
   @Column(DataType.BOOLEAN)
-  is_active: boolean;
+  declare is_active: boolean;
 
   @Index
   @Column(DataType.DATE)
-  deleted_at: Date;
+  declare deleted_at: Date;
 }

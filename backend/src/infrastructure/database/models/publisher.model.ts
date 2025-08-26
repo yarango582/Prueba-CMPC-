@@ -25,24 +25,24 @@ export class Publisher extends Model {
   @Unique
   @AllowNull(false)
   @Column(DataType.STRING(200))
-  name: string;
+  declare name: string;
 
   @Column(DataType.TEXT)
-  address: string;
+  declare address: string;
 
   @Column(DataType.STRING(20))
-  phone: string;
+  declare phone: string;
 
   @Column(DataType.STRING(255))
-  email: string;
+  declare email: string;
 
   @Column(DataType.STRING(255))
-  website: string;
+  declare website: string;
 
   @Default(true)
   @Column(DataType.BOOLEAN)
-  is_active: boolean;
+  declare is_active: boolean;
 
   @HasMany(() => Book)
-  books: Book[];
+  declare books: Book[];
 }
