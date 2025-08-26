@@ -1,0 +1,21 @@
+:root{
+  --bg: #f3f6fb;
+  --card-bg: #ffffff;
+  --muted: #6b7280;
+}
+body{ background: var(--bg); font-family: Inter, Roboto, Arial, sans-serif; }
+
+.book-card {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.book-card:hover { transform: translateY(-6px); box-shadow: 0 8px 20px rgba(11,114,185,0.12); }
+
+.new-book-btn {
+  background: linear-gradient(90deg,#0b72b9 0%, #0a5ea0 100%);
+  color: white;
+}
+
+/* Login styles */
+.login-root { margin-top: 6rem; }
+.paper-login { padding: 1.5rem 1.25rem; }
+.paper-login .MuiAvatar-root { margin-bottom: 0.25rem; }

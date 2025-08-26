@@ -27,6 +27,19 @@ export class FilterBookDto {
   @IsOptional()
   @IsArray()
   @IsUUID(4, { each: true })
+  @Transform(({ value }: { value: unknown }) => {
+    const toArray = (val: unknown): string[] | undefined => {
+      if (val === undefined || val === null) return undefined;
+      if (Array.isArray(val)) return val.map((v) => String(v));
+      if (typeof val === 'string') {
+        return val.includes(',')
+          ? val.split(',').map((v) => v.trim())
+          : [val];
+      }
+      return [String(val)];
+    };
+    return toArray(value);
+  })
   genres?: string[];
 
   @ApiPropertyOptional({
@@ -37,6 +50,19 @@ export class FilterBookDto {
   @IsOptional()
   @IsArray()
   @IsUUID(4, { each: true })
+  @Transform(({ value }: { value: unknown }) => {
+    const toArray = (val: unknown): string[] | undefined => {
+      if (val === undefined || val === null) return undefined;
+      if (Array.isArray(val)) return val.map((v) => String(v));
+      if (typeof val === 'string') {
+        return val.includes(',')
+          ? val.split(',').map((v) => v.trim())
+          : [val];
+      }
+      return [String(val)];
+    };
+    return toArray(value);
+  })
   authors?: string[];
 
   @ApiPropertyOptional({
@@ -47,6 +73,19 @@ export class FilterBookDto {
   @IsOptional()
   @IsArray()
   @IsUUID(4, { each: true })
+  @Transform(({ value }: { value: unknown }) => {
+    const toArray = (val: unknown): string[] | undefined => {
+      if (val === undefined || val === null) return undefined;
+      if (Array.isArray(val)) return val.map((v) => String(v));
+      if (typeof val === 'string') {
+        return val.includes(',')
+          ? val.split(',').map((v) => v.trim())
+          : [val];
+      }
+      return [String(val)];
+    };
+    return toArray(value);
+  })
   publishers?: string[];
 
   @ApiPropertyOptional({
