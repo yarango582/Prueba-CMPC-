@@ -100,23 +100,46 @@ export default function BookForm() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // basic validation for required relations
-    if (!authorId || !publisherId || !genreId) {
-      alert("Author, publisher y genre son obligatorios");
+    // resolve ids (accept either string ids or objects with `id`)
+    const resolveId = (v: any) => (typeof v === "string" && v ? v : v && v.id ? v.id : undefined);
+    const resolvedAuthor = resolveId(authorId);
+    const resolvedPublisher = resolveId(publisherId);
+    // genres can be multiple; normalize to array of ids
+    const resolvedGenreIds = (genreIds && genreIds.length
+      ? genreIds.map((g: any) => resolveId(g) || g).filter(Boolean)
+      : genreId
+      ? [resolveId(genreId) || genreId]
+      : []
+    ).filter(Boolean);
+
+    const hasGenre = resolvedGenreIds.length > 0;
+    if (!resolvedAuthor || !resolvedPublisher || !hasGenre) {
+      // debug info to help trace why validation failed in runtime
+      // eslint-disable-next-line no-console
+      console.debug("Validation failed for book relations", {
+        authorId,
+        publisherId,
+        genreId,
+        genreIds,
+        resolvedAuthor,
+        resolvedPublisher,
+        resolvedGenreIds,
+      });
+      alert("Author, publisher y género son obligatorios");
       return;
     }
 
     const payload: BookPayload = {
       title,
       price: Number(price),
-      author_id: authorId,
-      publisher_id: publisherId,
+      author_id: resolvedAuthor,
+      publisher_id: resolvedPublisher,
       // prefer sending multiple genre ids if selected
-      ...(genreIds && genreIds.length
-        ? { genre_ids: genreIds }
+      ...( (genreIds && genreIds.length)
+        ? { genre_ids: resolvedGenreIds }
         : genreId
-        ? { genre_id: genreId }
-        : {}),
+        ? { genre_id: resolvedGenreIds[0] }
+        : {} ),
       isbn: isbn || undefined,
       pages: pages ? Number(pages) : undefined,
       language,
