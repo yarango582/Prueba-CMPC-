@@ -251,11 +251,12 @@ export class BooksController {
     try {
       return await this.booksService.uploadImage(id, file, userId);
     } catch (err: any) {
-          const message = typeof err === 'string' ? err : (err instanceof Error ? err.message : '');
-          if (
-            message.includes('Invalid image file') ||
-            message.includes('error uploading')
-          ) {
+      const message =
+        typeof err === 'string' ? err : err instanceof Error ? err.message : '';
+      if (
+        message.includes('Invalid image file') ||
+        message.includes('error uploading')
+      ) {
         throw new BadRequestException(
           'Archivo de imagen inválido o con formato no soportado',
         );

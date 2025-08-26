@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BooksController } from './books.controller';
 import { BooksService } from './books.service';
-import { ExecutionContext } from '@nestjs/common';
 
 describe('BooksController (unit)', () => {
   let controller: BooksController;
@@ -20,7 +19,7 @@ describe('BooksController (unit)', () => {
   });
 
   it('GET /books -> returns list', async () => {
-    const res = await controller.findAll({} as any, undefined as any);
+    const res = await controller.findAll({});
     expect(res).toHaveProperty('data');
   });
 });
