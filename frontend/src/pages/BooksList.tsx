@@ -96,9 +96,10 @@ export default function BooksList() {
     // initialize filters from URL
     const q = searchParams.get("q") || "";
     // handle both `genres` and `genres[]` query key styles
-    const genres =
-      [...searchParams.getAll("genres"), ...searchParams.getAll("genres[]")] ||
-      [];
+    const genres = [
+      ...searchParams.getAll("genres"),
+      ...searchParams.getAll("genres[]"),
+    ];
     const author =
       searchParams.get("author") || searchParams.get("authors") || "";
     const publisher =

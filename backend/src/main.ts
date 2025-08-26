@@ -5,8 +5,9 @@ import { AppModule } from './app.module';
 import { ResponseInterceptor } from './shared/response/response.interceptor';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
 import { Request, Response } from 'express';
+import { SeedsService } from './seeds/seeds.service';
 
-async function bootstrap() {
+export async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Configuración global
@@ -57,6 +58,20 @@ async function bootstrap() {
   console.log(
     `📚 Swagger docs available at: http://localhost:${port}/api/docs`,
   );
+
+  // Run DB seed if requested
+  if (process.env.SEED_DB === 'true') {
+    try {
+      const seeds = app.get(SeedsService);
+      await seeds.seedIfNeeded();
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('Seeding failed:', (err as any)?.message || err);
+    }
+  }
 }
 
-void bootstrap();
+// Ejecutar solo si el archivo se corre directamente (no al importarlo en tests)
+if (require.main === module) {
+  void bootstrap();
+}

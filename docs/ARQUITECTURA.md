@@ -1,80 +1,63 @@
 # Propuesta de Arquitectura - CMPC Libros
 
-## 1. Arquitectura Propuesta: Hexagonal + Modular
+## 1. Estructura del backend
 
-### ¿Por qué esta arquitectura?
+Ejemplo simplificado:
 
-**Arquitectura Hexagonal (Ports & Adapters) + Modular** es ideal para este proyecto porque:
-
-- ✅ **Escalabilidad**: Permite añadir nuevos módulos (ej: ventas, reportes) sin afectar el core
-- ✅ **Testabilidad**: Facilita el aislamiento para testing unitario (requisito de 80% cobertura)
-- ✅ **Mantenibilidad**: Separación clara de responsabilidades siguiendo SOLID
-- ✅ **Flexibilidad**: Permite cambiar ORMs, bases de datos o frameworks sin afectar lógica de negocio
-- ✅ **Auditabilidad**: Facilita implementación de logging y auditoría de operaciones
-
-## 2. Capas de la Arquitectura
-
-### 2.1 Core (Dominio)
 ```
-core/
-├── domain/
-│   ├── entities/          # Entidades de negocio
-│   ├── repositories/      # Interfaces (Ports)
-│   ├── services/          # Servicios de dominio
-│   └── value-objects/     # Objetos de valor
-└── application/
-    ├── use-cases/         # Casos de uso
-    ├── dto/              # Data Transfer Objects
-    └── interfaces/       # Contratos de aplicación
+backend/src/
+├── modules/                # Módulos de NestJS (books, authors, publishers, genres, users, auth, audit)
+│   ├── books/
+│   ├── authors/
+│   ├── publishers/
+│   ├── genres/
+│   ├── users/
+│   └── auth/
+├── infrastructure/         # Adaptadores: database (Sequelize), auth, logging, file-upload
+│   ├── database/
+│   ├── auth/
+│   ├── logging/
+│   └── file-upload/
+├── shared/                 # Interceptors, filters, pipes, decorators, response helpers
+├── seeds/                  # Módulo/servicio de seed (creación inicial de datos)
+└── main.ts                 # Bootstrap de la aplicación
 ```
 
-### 2.2 Infrastructure (Adaptadores)
-```
-infrastructure/
-├── database/
-│   ├── sequelize/        # Implementación Sequelize
-│   ├── repositories/     # Implementación de repositorios
-│   └── migrations/       # Migraciones de BD
-├── auth/                 # JWT, Guards, Strategies
-├── logging/              # Winston, Audit logging
-├── file-upload/          # Multer, S3/Local storage
-└── external-apis/        # APIs externas (si las hay)
-```
+Notas:
+- Las responsabilidades de dominio, casos de uso y DTOs están presentes dentro de los módulos y en `shared/` cuando son transversales.
+- Esta organización mantiene la intención del patrón Hexagonal (ports/adapters) pero aplicada con la convención de módulos de NestJS.
 
-### 2.3 Presentation (API/Controllers)
-```
-modules/
-├── books/
-│   ├── controllers/      # REST Controllers
-│   ├── dto/             # Request/Response DTOs
-│   └── guards/          # Autenticación/Autorización
-├── auth/
-├── users/
-└── shared/              # Interceptors, Filters, Pipes
-```
+## 2. Por qué no hay `core/` físico
 
-## 3. Patrones de Diseño a Implementar
+Se decidió no crear una carpeta `core/` separada por simplicidad y por coherencia con NestJS: los módulos actúan como límites de contexto y agrupan entidades, DTOs y servicios. Esto no contradice los principios de diseño requeridos por la prueba; mantiene testabilidad, separación de responsabilidades y facilidad para extraer componentes si se quisiera promover a paquetes independientes.
 
-### 3.1 Patrones Estructurales
+## 3. Presentation / Adaptadores
+
+Los controladores, DTOs y guards están dentro de cada módulo (por ejemplo `modules/books`), mientras que los adaptadores como repositorios Sequelize, Cloudinary/file-upload y logging residen en `infrastructure/`.
+
+
+## 4. Patrones de Diseño a Implementar
+
+### 4.1 Patrones Estructurales
 - **Repository Pattern**: Abstracción de acceso a datos
 - **Service Layer Pattern**: Lógica de negocio
 - **DTO Pattern**: Transferencia segura de datos
 - **Module Pattern**: Organización modular de NestJS
 
-### 3.2 Patrones Comportamentales
+### 4.2 Patrones Comportamentales
 - **Strategy Pattern**: Para filtros y ordenamiento dinámico
 - **Observer Pattern**: Para logging y auditoría
 - **Command Pattern**: Para operaciones CRUD complejas
 - **Decorator Pattern**: Interceptors, Guards, Pipes de NestJS
 
-### 3.3 Patrones Creacionales
+### 4.3 Patrones Creacionales
 - **Factory Pattern**: Creación de entidades y DTOs
 - **Builder Pattern**: Para queries complejas
 - **Dependency Injection**: Nativo en NestJS
 
-## 4. Estructura del Backend (NestJS)
+## 5. Estructura del Backend (NestJS)
 
-### 4.1 Módulos Principales
+### 5.1 Módulos Principales
 ```typescript
 // Estructura modular
 AppModule
@@ -88,11 +71,24 @@ AppModule
 └── SharedModule
 ```
 
-### 4.2 Flujo de Datos
+### 5.2 Flujo de datos real (backend)
+
+En el backend implementado la secuencia de ejecución es la siguiente (resumida):
+
 ```
-Request → Controller → Use Case → Domain Service → Repository → Database
-Response ← Controller ← DTO ← Domain Entity ← Repository ← Database
+Request → Middleware / Guard → Controller (valida DTO / pipes) → Service (caso de uso / lógica de aplicación) → Repository / Sequelize Model → Database
+
+Respuesta <- Database -> Repository / Sequelize Model -> Service (mapear a DTO/response) -> Controller (serializa/transforma) -> Client
 ```
+
+Detalles:
+- Middleware / Guard: manejo de autenticación, rate-limiting y otras responsabilidades transversales.
+- Controller: recibe y valida DTOs (pipes), aplica guards e invoca el service apropiado.
+- Service: contiene la lógica de aplicación (use-cases) y orquesta repositories, validaciones de negocio y transacciones.
+- Repository / Sequelize Model: adaptación a la persistencia (queries, relaciones, soft deletes).
+- DTO / Mapeos: La entrada se valida vía DTOs; el service devuelve entidades/modelos que se mapean a DTOs/response shapes antes de enviar la respuesta.
+
+Este diagrama refleja el flujo en el código actual y respeta la convención de NestJS en el repositorio.
 
 ## 5. Base de Datos - Diseño Normalizado
 
@@ -197,6 +193,12 @@ src/__tests__/
 - **Frontend**: >75% cobertura (Jest + Testing Library)
 
 ## 9. DevOps y Despliegue
+
+## Seed y Despliegue Local
+
+Se incluye un mecanismo de seed que crea usuarios, autores, editoriales, géneros y 15 libros de ejemplo cuando la variable de entorno `SEED_DB=true` está presente en el entorno del backend. Las imágenes de ejemplo deben colocarse en `./assets/images` y se montan en el contenedor backend para permitir subirlas a Cloudinary durante el seed.
+
+Usar `docker-compose up --build` con `SEED_DB=true` para ejecutar el seed automáticamente.
 
 ### 9.1 Docker Compose Stack
 ```yaml

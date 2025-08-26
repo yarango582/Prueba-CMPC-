@@ -38,14 +38,16 @@ services:
       DATABASE_NAME: cmpc_libros
       DATABASE_USER: cmpc_user
       DATABASE_PASSWORD: cmpc_password
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_SECRET: jamebond007*
       JWT_EXPIRES_IN: 24h
       UPLOAD_PATH: /app/uploads
-      CLOUDINARY_CLOUD_NAME: your-cloudinary-cloud-name
-      CLOUDINARY_API_KEY: your-cloudinary-api-key
-      CLOUDINARY_API_SECRET: your-cloudinary-api-secret
+      CLOUDINARY_CLOUD_NAME: drt2urlzx
+      CLOUDINARY_API_KEY: 495695187734966
+      CLOUDINARY_API_SECRET: rrd-bHy5WIqhO08euke9nWtO_oY
+      SEED_DB: 'true'
     volumes:
       - ./backend:/app
+      - ./assets:/app/assets
       - /app/node_modules
       - backend_uploads:/app/uploads
     depends_on:
@@ -65,13 +67,12 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      target: development
     container_name: cmpc-frontend
     ports:
       - "5173:5173"
     environment:
-      VITE_API_URL: http://localhost:3000/api
-      VITE_APP_NAME: CMPC Libros
+      VITE_API_URL: "http://localhost:3000/api"
+      VITE_APP_NAME: "CMPC Libros"
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -79,7 +80,10 @@ services:
       - backend
     networks:
       - cmpc-network
-    command: npm run dev
+    command:
+      - sh
+      - -c
+      - npm run dev -- --host 0.0.0.0
 
   # PgAdmin para administración de BD (opcional)
   pgadmin:

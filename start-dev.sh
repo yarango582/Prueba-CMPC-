@@ -1,49 +1,55 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Script para iniciar el entorno de desarrollo de CMPC Libros
+ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT_DIR"
 
 echo "🚀 Iniciando entorno de desarrollo CMPC Libros..."
 
-# Verificar si Docker está corriendo
+# Check Docker
 if ! docker info >/dev/null 2>&1; then
     echo "❌ Docker no está corriendo. Por favor, inicia Docker primero."
     exit 1
 fi
 
-# Verificar si el puerto 5432 está libre
-if lsof -Pi :5432 -sTCP:LISTEN -t >/dev/null ; then
-    echo "⚠️  El puerto 5432 está ocupado. Liberando..."
-    # Intentar detener servicios de PostgreSQL locales
+# Optional: try to stop local postgresql if it blocks port 5432
+if ss -ltn | grep -q ':5432'; then
+    echo "⚠️  Puerto 5432 en uso localmente. Intentando detener servicio local de PostgreSQL (si existe)..."
     sudo systemctl stop postgresql 2>/dev/null || true
-    sleep 2
+    sleep 1
 fi
 
-# Limpiar contenedores anteriores
-echo "🧹 Limpiando contenedores anteriores..."
-docker-compose down 2>/dev/null || true
+echo "🧹 Deteniendo contenedores previos (si existen)..."
+docker-compose down --remove-orphans || true
 
-# Construir e iniciar servicios
-echo "🔨 Construyendo e iniciando servicios..."
-docker-compose build backend
+echo "🔨 Construyendo imágenes..."
+docker-compose build --parallel
+
+echo "📦 Iniciando servicio de base de datos..."
 docker-compose up -d postgres
 
-# Esperar a que PostgreSQL esté listo
 echo "⏳ Esperando a que PostgreSQL esté listo..."
-until docker-compose exec postgres pg_isready -U cmpc_user -d cmpc_libros; do
-    echo "  Esperando PostgreSQL..."
-    sleep 3
+until docker-compose exec -T postgres pg_isready -U cmpc_user -d cmpc_libros >/dev/null 2>&1; do
+    printf '.'; sleep 2
 done
 
-echo "✅ PostgreSQL está listo!"
+echo "✅ PostgreSQL listo"
 
-# Iniciar backend
-echo "🚀 Iniciando backend..."
-docker-compose up -d backend
+echo "🚀 Iniciando backend y frontend..."
+docker-compose up -d backend frontend
 
-# Mostrar logs
-echo "📋 Mostrando logs del backend..."
-echo "   Usa Ctrl+C para detener los logs (los servicios seguirán ejecutándose)"
-echo "   Para detener todo: docker-compose down"
-echo ""
+echo "⏳ Esperando healthcheck del backend..."
+until curl --output /dev/null --silent --head --fail http://localhost:3000/health; do
+    printf '.'; sleep 2
+done
 
-docker-compose logs -f backend
+echo "✅ Backend listo. Si SEED_DB=true, el seeding se habrá ejecutado durante el arranque."
+echo "Credenciales por defecto (si el seed se ejecutó):"
+echo "  - admin@example.com / password123 (role: admin)"
+echo "  - user@example.com  / password123 (role: user)"
+echo "Frontend disponible en: http://localhost:5173"
+
+echo "Para ver logs del backend: docker-compose logs -f backend"
+echo "Para detener todo: docker-compose down"
+
+exit 0

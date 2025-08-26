@@ -4,22 +4,13 @@
 
 Este documento justifica las decisiones arquitectónicas tomadas para el sistema CMPC Libros, explicando **por qué** cada elección es la más adecuada para cumplir con los criterios de evaluación y requerimientos del proyecto.
 
-## 1. Arquitectura Principal: Hexagonal + Modular
+## 1. Arquitectura Principal: Hexagonal + Modular (ajustada al repositorio)
 
 ### ✅ Decisión: Arquitectura Hexagonal combinada con Modular de NestJS
 
-**Justificación:**
+La justificación permanece, pero se ajusta la descripción a la estructura real del repositorio: en lugar de una carpeta `core/` separada, la separación lógica se aplica mediante módulos (`modules/*`), `infrastructure/` y `shared/` dentro de `src/`.
 
-1. **Escalabilidad**: Permite añadir nuevos módulos (ventas, reportes, analytics) sin afectar el core
-2. **Testabilidad**: Facilita el testing unitario al aislar la lógica de negocio (requisito 80% cobertura)
-3. **SOLID Compliance**: Cumple inherentemente con los principios SOLID requeridos
-4. **Mantenibilidad**: Separación clara entre dominio, aplicación e infraestructura
-5. **Flexibilidad**: Permite cambiar ORMs, bases de datos o frameworks sin tocar lógica de negocio
-
-**Alternativas consideradas:**
-- ❌ **Monolítico simple**: No escala bien, dificulta testing
-- ❌ **Microservicios**: Overhead innecesario para el alcance actual
-- ❌ **Arquitectura en capas**: Menos flexible, más acoplamiento
+Alternativas evaluadas (mismas que antes) se mantienen, y la decisión por NestJS + módulos se conserva por las mismas razones: testabilidad, modularidad y soporte para patrones SOLID.
 
 ## 2. Stack Tecnológico
 
@@ -277,19 +268,19 @@ Este documento justifica las decisiones arquitectónicas tomadas para el sistema
 
 ---
 
-## 🎯 Criterios de Evaluación Cumplidos
+## 11. Notas prácticas y consideraciones sobre el seed
 
-| Criterio | Decisión Arquitectónica | Cumplimiento |
-|----------|------------------------|--------------|
-| **Calidad y legibilidad** | TypeScript + ESLint + Prettier | pendiente |
-| **Arquitectura y escalabilidad** | Hexagonal + Modular | pendiente |
-| **Rendimiento y optimización** | Índices + Paginación + Lazy Loading | pendiente |
-| **Cobertura y calidad tests** | Pirámide de testing + Mocking | pendiente |
-| **Usabilidad y UX** | React + Material UI + Responsive | pendiente |
-| **Documentación** | Swagger + README + Arquitectura | pendiente |
-| **Facilidad de despliegue** | Docker Compose one-command | pendiente |
-| **Patrones y mejores prácticas** | Repository + Service + DTO + Strategy | pendiente |
+- El repositorio incluye un `SeedsService` ejecutado durante el arranque del backend cuando la variable de entorno `SEED_DB=true`.
+- Importante: la implementación actual ejecuta un `TRUNCATE ... RESTART IDENTITY CASCADE` en tablas claves cuando `SEED_DB=true`. Esto es destructivo y está pensado únicamente para entornos de desarrollo o pruebas. No activar `SEED_DB=true` en entornos con datos reales.
+- El seed crea: 2 usuarios (admin y user), al menos 3 editoriales (publishers), 6 géneros, múltiples autores y 15 libros con imágenes (subidas a Cloudinary si hay credenciales; en su defecto usa rutas locales montadas desde `./assets/images`).
+
+
+## 12. Recomendaciones y pasos siguientes
+
+- Mantener la convención actual (módulos) o extraer un `core/` si se desea forzar separación física entre dominio y aplicación.
+- Documentar en `ARQUITECTURA.md` las convenciones internas de cada módulo (nombres de carpetas y contratos) si se espera que terceros trabajen en el proyecto.
+- Añadir una bandera `FORCE_RESEED=true` separada de `SEED_DB` si se requiere un re-seed intencional sin riesgo de activarlo por error.
 
 ---
 
-**Conclusión**: Cada decisión arquitectónica está fundamentada en los requerimientos específicos del proyecto y optimizada para cumplir con todos los criterios de evaluación, garantizando un sistema robusto, escalable y mantenible.
+**Conclusión**: Los documentos se han ajustado para reflejar fielmente la estructura del repositorio y las decisiones implementadas. Se ha añadido una advertencia explícita sobre la naturaleza destructiva del seed cuando `SEED_DB=true`.

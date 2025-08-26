@@ -13,6 +13,7 @@ import { AuditModule } from './audit/audit.module';
 import { SharedModule } from './shared/shared.module';
 import { FileUploadModule } from './infrastructure/file-upload/file-upload.module';
 import { LoggingModule } from './infrastructure/logging/logging.module';
+import { SeedsModule } from './seeds/seeds.module';
 // Models
 import { User } from './infrastructure/database/models/user.model';
 import { Book } from './infrastructure/database/models/book.model';
@@ -56,6 +57,7 @@ import { BookInventoryLog } from './infrastructure/database/models/book-inventor
     SharedModule,
     FileUploadModule,
     LoggingModule,
+    SeedsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
